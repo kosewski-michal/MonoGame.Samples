@@ -17,14 +17,17 @@ namespace Platformer2D
     /// <summary>
     /// A valuable item the player can collect.
     /// </summary>
-    class Gem
+    class BulletFromGem
     {
         private Texture2D texture;
         private Vector2 origin;
+        public Vector2 direction;
+
+
         private SoundEffect collectedSound;
 
         public readonly int PointValue = 30;
-        public readonly Color Color = Color.Yellow;
+        public readonly Color Color = Color.White;
 
         // The gem is animated from a base position along the Y axis.
         private Vector2 basePosition;
@@ -83,7 +86,7 @@ namespace Platformer2D
         /// <summary>
         /// Constructs a new gem.
         /// </summary>
-        public Gem(Level level, Vector2 position)
+        public BulletFromGem(Level level, Vector2 position)
         {
             this.level = level;
             this.basePosition = position;
@@ -96,7 +99,7 @@ namespace Platformer2D
         /// </summary>
         public void LoadContent()
         {
-            texture = Level.Content.Load<Texture2D>("Sprites/Gem");
+            texture = Level.Content.Load<Texture2D>("Sprites/Bullet");
             origin = new Vector2(texture.Width / 2.0f, texture.Height / 2.0f);
             collectedSound = Level.Content.Load<SoundEffect>("Sounds/GemCollected");
         }
@@ -107,7 +110,7 @@ namespace Platformer2D
         public void Update(GameTime gameTime)
         {
             // Bounce control constants
-            const float BounceHeight = 0.18f;
+            const float BounceHeight = 0;//0.18f;
             const float BounceRate = 3.0f;
             const float BounceSync = -0.75f;
 
@@ -118,7 +121,8 @@ namespace Platformer2D
 
             if (gemType=="special")
             {
-                basePosition.X+=5;
+                basePosition = basePosition + 5*direction;
+                //basePosition.X+=5;
             }
           
 

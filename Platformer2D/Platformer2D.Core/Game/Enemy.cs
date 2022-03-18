@@ -27,6 +27,8 @@ namespace Platformer2D
     /// </summary>
     class Enemy
     {
+        public bool isAlive = true;
+
         public Level Level
         {
             get { return level; }
@@ -87,6 +89,7 @@ namespace Platformer2D
         /// </summary>
         public Enemy(Level level, Vector2 position, string spriteSet)
         {
+            isAlive = true;
             this.level = level;
             this.position = position;
 
@@ -138,7 +141,7 @@ namespace Platformer2D
             else
             {
                 // If we are about to run into a wall or off a cliff, start waiting.
-                if (Level.GetCollision(tileX + (int)direction, tileY - 1) == TileCollision.Impassable ||
+                if (Level.GetCollision(tileX + (int)direction, tileY - 1) == TileCollision.Solid ||
                     Level.GetCollision(tileX + (int)direction, tileY) == TileCollision.Passable)
                 {
                     waitTime = MaxWaitTime;
@@ -157,23 +160,28 @@ namespace Platformer2D
         /// </summary>
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
-            // Stop running when the game is paused or before turning around.
-            if (!Level.Player.IsAlive ||
-                Level.ReachedExit ||
-                Level.TimeRemaining == TimeSpan.Zero ||
-                waitTime > 0)
+            if (isAlive)
             {
-                sprite.PlayAnimation(idleAnimation);
-            }
-            else
-            {
-                sprite.PlayAnimation(runAnimation);
-            }
 
 
-            // Draw facing the way the enemy is moving.
-            SpriteEffects flip = direction > 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            sprite.Draw(gameTime, spriteBatch, Position, flip);
+                // Stop running when the game is paused or before turning around.
+                if (!Level.Player.IsAlive ||
+                    Level.ReachedExit ||
+                    Level.TimeRemaining == TimeSpan.Zero ||
+                    waitTime > 0)
+                {
+                    sprite.PlayAnimation(idleAnimation);
+                }
+                else
+                {
+                    sprite.PlayAnimation(runAnimation);
+                }
+
+
+                // Draw facing the way the enemy is moving.
+                SpriteEffects flip = direction > 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+                sprite.Draw(gameTime, spriteBatch, Position, flip);
+            }
         }
     }
 }

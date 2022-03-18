@@ -20,6 +20,7 @@ namespace Platformer2D
     /// </summary>
     class Player
     {
+        public string debugText = "";
         // Animations
         private Animation idleAnimation;
         private Animation runAnimation;
@@ -61,7 +62,7 @@ namespace Platformer2D
             get { return velocity; }
             set { velocity = value; }
         }
-        Vector2 velocity;
+        public Vector2 velocity;
 
         // Constants for controlling horizontal movement
         private const float MoveAcceleration = 13000.0f;
@@ -70,7 +71,7 @@ namespace Platformer2D
         private const float AirDragFactor = 0.58f;
 
         // Constants for controlling vertical movement
-        private const float MaxJumpTime = 0.35f;
+        private const float MaxJumpTime =0.35f;
         private const float JumpLaunchVelocity = -3500.0f;
         private const float GravityAcceleration = 3400.0f;
         private const float MaxFallSpeed = 550.0f;
@@ -97,6 +98,11 @@ namespace Platformer2D
 
         // Jumping state
         private bool isJumping;
+
+        public bool isFire;
+        public TimeSpan lastFireTime;
+
+
         private bool wasJumping;
         private float jumpTime;
 
@@ -198,6 +204,7 @@ namespace Platformer2D
             // Clear input.
             movement = 0.0f;
             isJumping = false;
+
         }
 
         /// <summary>
@@ -240,6 +247,14 @@ namespace Platformer2D
             {
                 movement = 1.0f;
             }
+
+            if (keyboardState.IsKeyDown(Keys.LeftControl))
+            {
+
+                isFire = true; 
+
+            }
+
 
             // Check if the player wants to jump.
             isJumping =
@@ -287,6 +302,11 @@ namespace Platformer2D
 
             if (Position.Y == previousPosition.Y)
                 velocity.Y = 0;
+
+
+            //gems.Add(new Gem(this, new Vector2(position.X, position.Y)));
+
+            
         }
 
         /// <summary>
@@ -358,6 +378,15 @@ namespace Platformer2D
             int topTile = (int)Math.Floor((float)bounds.Top / Tile.Height);
             int bottomTile = (int)Math.Ceiling(((float)bounds.Bottom / Tile.Height)) - 1;
 
+
+            //for (int j = 0; j < gems.Count; j++)
+            //{
+            //    if (enemy.BoundingRectangle.Intersects(gems[j].BoundingRectangle))
+            //    {
+            //        enemy.isAlive = false;
+            //    }
+            //}
+
             // Reset flag to search for ground collision.
             isOnGround = false;
 
@@ -386,16 +415,22 @@ namespace Platformer2D
                                     isOnGround = true;
 
                                 // Ignore platforms, unless we are on the ground.
-                                if (collision == TileCollision.Impassable || IsOnGround)
+                                if (collision == TileCollision.Solid || IsOnGround)
                                 {
                                     // Resolve the collision along the Y axis.
                                     Position = new Vector2(Position.X, Position.Y + depth.Y);
+
+                                    if (debugText.Length>50)
+                                    {
+                                        debugText = "";
+                                    }
+                                    debugText += depth.Y + ",";
 
                                     // Perform further collisions with the new bounds.
                                     bounds = BoundingRectangle;
                                 }
                             }
-                            else if (collision == TileCollision.Impassable) // Ignore platforms.
+                            else if (collision == TileCollision.Solid) // Ignore platforms.
                             {
                                 // Resolve the collision along the X axis.
                                 Position = new Vector2(Position.X + depth.X, Position.Y);

@@ -15,15 +15,38 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework.Input.Touch;
 using Microsoft.Xna.Framework.Content;
+using System.Collections.Generic;
+using TiledSharp;
+using Platformer2D.Core.Game;
 
 namespace Platformer2D
 {
+    public static class TextureExtension
+    {
+        /// <summary>
+        /// Creates a new texture from an area of the texture.
+        /// </summary>
+        /// <param name="graphics">The current GraphicsDevice</param>
+        /// <param name="rect">The dimension you want to have</param>
+        /// <returns>The partial Texture.</returns>
+        public static Texture2D CreateTexture(this Texture2D src, GraphicsDevice graphics, Rectangle rect)
+        {
+            Texture2D tex = new Texture2D(graphics, rect.Width, rect.Height);
+            int count = rect.Width * rect.Height;
+            Color[] data = new Color[count];
+            src.GetData(0, rect, data, 0, count);
+            tex.SetData(data);
+            return tex;
+        }
+    }
     /// <summary>
     /// This is the main type for your game
     /// </summary>
     public class PlatformerGame : Microsoft.Xna.Framework.Game
     {
         // Resources for drawing.
+        private FrameCounter _frameCounter = new FrameCounter();
+
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         Vector2 baseScreenSize = new Vector2(800, 480);
@@ -60,6 +83,12 @@ namespace Platformer2D
         // or handle exceptions, both of which can add unnecessary time to level loading.
         private const int numberOfLevels = 3;
 
+
+       
+
+
+      
+
         public PlatformerGame()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -67,13 +96,33 @@ namespace Platformer2D
 #if WINDOWS_PHONE
             TargetElapsedTime = TimeSpan.FromTicks(333333);
 #endif
-            graphics.IsFullScreen = false;
+            // graphics.IsFullScreen = false;
 
-            //graphics.PreferredBackBufferWidth = 800;
-            //graphics.PreferredBackBufferHeight = 480;
-            graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+
+
+
+            //graphics.PreferredBackBufferWidth = 1600;
+            //graphics.PreferredBackBufferHeight = 900;
+            //graphics.wid.BackBufferWidth = 1000;
+
+            //graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+            //graphics.ApplyChanges();
 
             Accelerometer.Initialize();
+        }
+
+        protected override void Initialize()
+        {
+            // TODO: Add your initialization logic here
+
+            graphics.PreferredBackBufferWidth = 1280;
+            graphics.PreferredBackBufferHeight = 720;
+            graphics.IsFullScreen = false;
+            graphics.SynchronizeWithVerticalRetrace = true; //Vsync
+
+            graphics.ApplyChanges();
+
+            base.Initialize();
         }
 
         /// <summary>
@@ -82,6 +131,8 @@ namespace Platformer2D
         /// </summary>
         protected override void LoadContent()
         {
+          
+
             this.Content.RootDirectory = "Content";
 
             // Create a new SpriteBatch, which can be used to draw textures.
@@ -110,10 +161,15 @@ namespace Platformer2D
             }
             catch { }
 
-            LoadNextLevel();
+
+
+
+        LoadNextLevel();
         }
 
-        public void ScalePresentationArea()
+   
+
+    public void ScalePresentationArea()
         {
             //Work out how much we need to scale our graphics to fill the screen
             backbufferWidth = GraphicsDevice.PresentationParameters.BackBufferWidth;
@@ -122,6 +178,9 @@ namespace Platformer2D
             float verScaling = backbufferHeight / baseScreenSize.Y;
             Vector3 screenScalingFactor = new Vector3(horScaling, verScaling, 1);
             globalTransformation = Matrix.CreateScale(screenScalingFactor);
+
+
+
             System.Diagnostics.Debug.WriteLine("Screen Size - Width[" + GraphicsDevice.PresentationParameters.BackBufferWidth + "] Height [" + GraphicsDevice.PresentationParameters.BackBufferHeight + "]");
         }
 
@@ -204,8 +263,12 @@ namespace Platformer2D
             // Load the level.
             string levelPath = string.Format("Content/Levels/{0}.txt", levelIndex);
             using (Stream fileStream = TitleContainer.OpenStream(levelPath))
-                level = new Level(Services, fileStream, levelIndex);
-        }
+                level = new Level(Services, fileStream, levelIndex, GraphicsDevice);
+
+    }
+
+
+       
 
         private void ReloadCurrentLevel()
         {
@@ -219,21 +282,44 @@ namespace Platformer2D
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+          
+
+
+
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+      
 
-            spriteBatch.Begin(SpriteSortMode.Immediate, null, null, null, null,null, globalTransformation);
+            //Matrix newMatrix=
+            //        Matrix.CreateTranslation(new Vector3(-Location.X, -Location.Y, 0)) *
+            //        Matrix.CreateRotationZ(Rotation) *
+            //        Matrix.CreateScale(Zoom) *
+            //        Matrix.CreateTranslation(new Vector3(Bounds.Width * 0.5f, Bounds.Height * 0.5f, 0));
+            Matrix newMatrix =
+                 Matrix.CreateTranslation(new Vector3(-level.Player.Position.X+400, 0, 0)) *globalTransformation;
 
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, null, SamplerState.PointClamp, null, null,null, newMatrix);
             level.Draw(gameTime, spriteBatch);
-
-            DrawHud();
-
             spriteBatch.End();
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, null, SamplerState.PointClamp, null, null, null, globalTransformation);
+            DrawHud(gameTime);
+            spriteBatch.End();
+
 
             base.Draw(gameTime);
         }
 
-        private void DrawHud()
+        private void DrawHud(GameTime gameTime)
         {
+            var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            _frameCounter.Update(deltaTime);
+
+            var fps = string.Format("FPS: {0}", _frameCounter.AverageFramesPerSecond);
+
+
+
             Rectangle titleSafeArea = GraphicsDevice.Viewport.TitleSafeArea;
             Vector2 hudLocation = new Vector2(titleSafeArea.X, titleSafeArea.Y);
             //Vector2 center = new Vector2(titleSafeArea.X + titleSafeArea.Width / 2.0f,
@@ -260,7 +346,10 @@ namespace Platformer2D
             // Draw score
             float timeHeight = hudFont.MeasureString(timeString).Y;
             DrawShadowedString(hudFont, "SCORE: " + level.Score.ToString(), hudLocation + new Vector2(0.0f, timeHeight * 1.2f), Color.Yellow);
-           
+
+            DrawShadowedString(hudFont, fps, hudLocation + new Vector2(0.0f, timeHeight * 1.2f*2), Color.Yellow);
+            
+
             // Determine the status overlay message to show.
             Texture2D status = null;
             if (level.TimeRemaining == TimeSpan.Zero)
